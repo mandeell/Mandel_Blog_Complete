@@ -30,9 +30,9 @@
         <!-- TODO: Add code to delete posts below -->
         <p class="post-meta">
           Posted by
-          <a href="#">{{post.author}}</a>
+          <a href="#">{{post.author.name}}</a>
           on {{post.date}}
-          {% if current_user.is_authenticated and current_user.admin %}
+          {% if current_user.admin %}
           <a href="{{ url_for('routes.delete', post_id=post.id) }}">✘</a>
           {% endif %}
         </p>
@@ -42,7 +42,7 @@
       {% endfor %}
 
       <!-- New Post -->
-      {% if current_user.is_authenticated and current_user.agent %}
+      {% if current_user.agent %}
       <div class="d-flex justify-content-end mb-4">
         <a
           class="btn btn-primary float-right"
