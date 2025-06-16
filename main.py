@@ -1,5 +1,4 @@
-import logging
-import os
+import logging, os
 from logging.handlers import RotatingFileHandler
 from flask import Flask, request, redirect
 from flask_bootstrap import Bootstrap5
@@ -7,6 +6,8 @@ from flask_ckeditor import CKEditor
 from models import db
 from routes import routes, login_manager
 from dotenv import load_dotenv
+from flask_migrate import Migrate
+from flask_gravatar import Gravatar
 
 
 load_dotenv()
@@ -14,12 +15,16 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+migrate = Migrate(app, db)
 
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 db.init_app(app)
 app.register_blueprint(routes)
 login_manager.init_app(app)
+
+gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False,
+                    force_lower=False, use_ssl=False, base_url=None)
 
 if not app.debug:
     file_handler = RotatingFileHandler('app.log', maxBytes=10240, backupCount=10)
