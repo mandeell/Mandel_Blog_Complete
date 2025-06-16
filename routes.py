@@ -1,8 +1,8 @@
 from flask import render_template, redirect, url_for, Blueprint, flash
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, BlogPost, User
-from forms import CreatePostForm, ContactForm, RegisterForm, LoginForm
+from models import db, BlogPost, User, Comment
+from forms import CreatePostForm, ContactForm, RegisterForm, LoginForm, CommentForm
 from dotenv import load_dotenv
 from email.mime.text import MIMEText
 import smtplib, os, ssl
@@ -16,6 +16,8 @@ MY_EMAIL = os.getenv("MY_EMAIL")
 MY_PASSWORD = os.getenv("MY_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
 context = ssl.create_default_context()
+
+
 
 routes = Blueprint('routes', __name__)
 login_manager = LoginManager()
@@ -45,9 +47,11 @@ def load_user(user_id):
     return db.get_or_404(User, user_id)
 
 @routes.route('/register', methods=['GET', 'POST'])
-@admin_only
 def register():
     form = RegisterForm()
+    if not current_user.is_authenticated or not getattr(current_user, 'admin', False):
+        del form.agent
+        del form.admin
     if form.validate_on_submit():
         if User.query.filter_by(email=form.email.data).first():
             flash('Email already registered. Login instead.')
@@ -58,13 +62,17 @@ def register():
             method='pbkdf2:sha256',
             salt_length=8
         )
+
+        agent = form.agent.data if 'agent' in form._fields else False
+        admin = form.admin.data if 'admin' in form._fields else False
+
         new_user = User(
             name = form.name.data,
             email = form.email.data,
             phone = form.phone.data,
             password = hashed_and_salted_password,
-            agent = form.agent.data,
-            admin = form.admin.data
+            agent = agent,
+            admin = admin
         )
         db.session.add(new_user)
         db.session.commit()
@@ -105,10 +113,28 @@ def get_all_posts():
     posts = result.scalars().all()
     return render_template("index.html", all_posts=posts)
 
-@routes.route('/post/<int:post_id>')
+@routes.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def show_post(post_id):
+    from main import gravatar
     requested_post = db.get_or_404(BlogPost, post_id)
-    return render_template("post.html", post=requested_post)
+    comment_form = CommentForm()
+    if comment_form.validate_on_submit():
+        if current_user.is_authenticated:
+            if not current_user.is_authenticated:
+                flash("You need to login or register to comment.")
+                return redirect(url_for("routes.login"))
+        new_comment = Comment(
+            comment_author=current_user,
+            text=comment_form.comment_text.data,
+            parent_post = requested_post,
+            name = comment_form.name.data,
+        )
+
+        db.session.add(new_comment)
+        db.session.commit()
+        return redirect(url_for('routes.show_post', post_id=post_id))
+    return render_template("post.html", post=requested_post,
+                           form=comment_form, current_user=current_user)
 
 @routes.route('/add_new_post', methods=['GET', 'POST'])
 @login_required
@@ -169,6 +195,17 @@ def delete(post_id):
     db.session.delete(post)
     db.session.commit()
     return redirect(url_for('routes.get_all_posts', post_id=post_id))
+
+@routes.route('/delete_comment/<int:comment_id>')
+@admin_only
+def delete_comment(comment_id):
+    comment = db.get_or_404(Comment, comment_id)
+    if not current_user.admin:
+        flash("You don't have permission to perform this action", "danger")
+        return redirect(url_for('routes.show_post', post_id=comment.post_id))
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('routes.show_post', post_id=comment.post_id))
 
 @routes.route("/about")
 def about():
