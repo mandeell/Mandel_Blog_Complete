@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from email.mime.text import MIMEText
 import smtplib, os, ssl
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from functools import wraps
+from flask import abort
 
 
 load_dotenv()
@@ -18,18 +20,35 @@ context = ssl.create_default_context()
 routes = Blueprint('routes', __name__)
 login_manager = LoginManager()
 
+def agent_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        #If id is not 1 then return abort with 403 error
+        if not current_user.agent:
+            return abort(403)
+        #Otherwise continue with the route function
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        #If id is not 1 then return abort with 403 error
+        if not current_user.admin:
+            return abort(403)
+        #Otherwise continue with the route function
+        return f(*args, **kwargs)
+    return decorated_function
 
 @login_manager.user_loader
 def load_user(user_id):
     return db.get_or_404(User, user_id)
 
 @routes.route('/register', methods=['GET', 'POST'])
+@admin_only
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        if not current_user.admin:
-            flash("You don't have permission to perform this action", "danger")
-            return redirect(url_for('routes.get_all_posts'))
         if User.query.filter_by(email=form.email.data).first():
             flash('Email already registered. Login instead.')
             return redirect(url_for('routes.login'))
@@ -93,6 +112,7 @@ def show_post(post_id):
 
 @routes.route('/add_new_post', methods=['GET', 'POST'])
 @login_required
+@agent_only
 def add_new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
@@ -104,8 +124,8 @@ def add_new_post():
             subtitle=form.subtitle.data,
             date = date.today().strftime("%B %d, %Y"),
             body = form.body.data,
-            author = form.author.data,
             img_url = form.img_url.data,
+            author = current_user,
         )
         db.session.add(new_post)
         db.session.commit()
@@ -113,6 +133,7 @@ def add_new_post():
     return render_template("make-post.html", form=form)
 
 @routes.route('/edit_post/<int:post_id>', methods=['GET', 'POST'])
+@agent_only
 @login_required
 def edit_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
@@ -138,6 +159,7 @@ def edit_post(post_id):
     return render_template('make-post.html', is_edit=True, form=edit_form)
 
 @routes.route('/delete/<int:post_id>')
+@admin_only
 @login_required
 def delete(post_id):
     post = db.get_or_404(BlogPost, post_id)
