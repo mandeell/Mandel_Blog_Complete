@@ -36,11 +36,9 @@
         {% endif %}
 
                 <!-- Comments Area -->
-        <!-- TODO: Add a CKEditor for commenting below -->
         {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
         <p></p>
         <div class="col-lg-8 col-md-10 mx-auto comment">
-          <!-- TODO: Show all the comments on a post -->
           <ul class="commentList">
             {% for comment in post.comments: %}
             <li>
