@@ -30,7 +30,7 @@
         <!-- TODO: Add code to delete posts below -->
         <p class="post-meta">
           Posted by
-          <a href="#">{{post.author.name}}</a>
+          <a href="#">{{post.author.name.title() }}</a>
           on {{post.date}}
           {% if current_user.admin %}
           <a href="{{ url_for('routes.delete', post_id=post.id) }}">✘</a>
