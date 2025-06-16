@@ -10,7 +10,7 @@
           <h2 class="subheading">{{ post.subtitle }}</h2>
           <span class="meta"
             >Posted by
-            <a href="#">{{ post.author }}</a>
+            <a href="#">{{ post.author.name }}</a>
             on {{ post.date }}
           </span>
         </div>
@@ -25,7 +25,7 @@
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
         {{ post.body|safe }}
-        {% if current_user.is_authenticated and current_user.agent %}
+        {% if current_user.agent %}
         <div class="d-flex justify-content-end mb-4">
           <a
             class="btn btn-primary float-right"
