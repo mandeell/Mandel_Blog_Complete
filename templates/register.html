@@ -22,9 +22,7 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
-        {% if  current_user.admin %}
         {{ render_form(form, button_map={"submit": "primary"}) }}
-        {% endif %}
       </div>
     </div>
   </div>
