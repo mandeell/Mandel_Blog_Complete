@@ -15,12 +15,32 @@ load_dotenv()
 MY_EMAIL = os.getenv("MY_EMAIL")
 MY_PASSWORD = os.getenv("MY_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
-context = ssl.create_default_context()
 
 
 
 routes = Blueprint('routes', __name__)
 login_manager = LoginManager()
+
+def send_email(to, subject, content):
+    """Helper function to send emails"""
+    context = ssl.create_default_context()
+    msg = MIMEText(content, "plain", "utf-8")
+    msg['Subject'] = subject
+    msg['From'] = MY_EMAIL
+    msg['To'] = to
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=20) as connection:
+            connection.login(user=MY_EMAIL, password=MY_PASSWORD)
+            connection.sendmail(
+                from_addr=MY_EMAIL,
+                to_addrs=to,
+                msg=msg.as_string()
+            )
+        flash("Message sent successfully!", "success")
+    except Exception as e:
+        from main import app
+        app.logger.error(f"Email failed: {str(e)}")
+        flash("Failed to send message. Please try again later.", "danger")
 
 def agent_only(f):
     @wraps(f)
@@ -218,23 +238,7 @@ def contact():
                    f'Email: {contact_form.email.data}\n'
                    f'Phone Number: {contact_form.phone.data}\n'
                    f'Message: {contact_form.message.data}')
-        msg = MIMEText(content, "plain", "utf-8")
-        msg['Subject'] = "Blog Contact Form"
-        msg['From'] = MY_EMAIL
-        msg['To'] = contact_form.email.data.lower()
-        try:
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=20) as connection:
-                connection.login(user=MY_EMAIL, password=MY_PASSWORD)
-                connection.sendmail(
-                    from_addr=MY_EMAIL,
-                    to_addrs=TO_EMAIL.lower(),
-                    msg=msg.as_string()
-                )
-            flash("Message sent successfully!", "success")
-        except Exception as e:
-            from main import app
-            app.logger.error(f"Email failed: {str(e)}")
-            flash("Failed to send message. Please try again later.", "danger")
+        send_email(to=MY_EMAIL,subject='Blog Contact Form', content=content)
         return redirect(url_for('routes.contact'))
     elif contact_form.is_submitted() and not contact_form.validate():
         flash("Please correct the errors in the form.", "danger")
@@ -252,3 +256,5 @@ def internal_server_error(e):
 def inject_now():
     from datetime import datetime
     return {'year': datetime.now().year }
+
+
