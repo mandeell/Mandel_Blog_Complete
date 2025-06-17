@@ -129,7 +129,6 @@ def show_post(post_id):
             parent_post = requested_post,
             name = comment_form.name.data,
         )
-
         db.session.add(new_comment)
         db.session.commit()
         return redirect(url_for('routes.show_post', post_id=post_id))
@@ -252,4 +251,4 @@ def internal_server_error(e):
 @routes.context_processor
 def inject_now():
     from datetime import datetime
-    return {'year': datetime.now().year}
+    return {'year': datetime.now().year }

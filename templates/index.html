@@ -17,9 +17,9 @@
   </div>
 </header>
 <!-- Main Content-->
-<div class="container px-4 px-lg-5">
-  <div class="row gx-4 gx-lg-5 justify-content-center">
-    <div class="col-md-10 col-lg-8 col-xl-7">
+<div class="container position-relative px-4 px-lg-5">
+  <div class="row gx-4 gx-lg-5 justify-content-left">
+    <div class="col-12 text-start">
       <!-- Post preview-->
       {% for post in all_posts %}
       <div class="post-preview">
@@ -43,6 +43,7 @@
       <!-- New Post -->
       {% if current_user.agent %}
       <div class="d-flex justify-content-end mb-4">
+        <a class="btn btn-secondary text-uppercase me-3" href="#!">Older Posts →</a>
         <a
           class="btn btn-primary float-right"
           href="{{ url_for('routes.add_new_post') }}"
@@ -51,7 +52,7 @@
       {% endif %}
       <!-- Pager-->
       <div class="d-flex justify-content-end mb-4">
-        <a class="btn btn-secondary text-uppercase" href="#!">Older Posts →</a>
+
       </div>
     </div>
   </div>
