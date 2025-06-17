@@ -238,7 +238,7 @@ def contact():
                    f'Email: {contact_form.email.data}\n'
                    f'Phone Number: {contact_form.phone.data}\n'
                    f'Message: {contact_form.message.data}')
-        send_email(to=MY_EMAIL,subject='Blog Contact Form', content=content)
+        send_email(to=TO_EMAIL,subject='Blog Contact Form', content=content)
         return redirect(url_for('routes.contact'))
     elif contact_form.is_submitted() and not contact_form.validate():
         flash("Please correct the errors in the form.", "danger")
